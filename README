@@ -1,0 +1,63 @@
+Vrancea Oana Roxana, 322 CD
+
+Pentru aceasta tema am folosit implementarea realizata pentru laboratorul 10.
+Fisierul "request.c" contine functiile compute_get_request, compute_post_request
+si compute_delete_request ce compun mesajele care sunt trimise catre server.
+Pentru primele doua functii am preluat implementarea din laborator, si le-am 
+modificat adaugand un camp pentru tokens si un camp pentru numarul de tokens.
+Functia compute_delete_requests am implementat-o asemanator cu funtia 
+compute_get_request. 
+
+Am ales sa folosesc biblioteca parson deoarece era recomandata pentru o
+implementare in C, dar avea si exemple utile in documentatie.
+
+In fisierul "helpers.c" am adaugat doua functii ajutatoare:
+1.create_register_payload - intoarce username-ul si parola ca un obiect
+json.
+2.create_book_payload - intoarce informatiile despre o carte ca un 
+obiect json.
+
+Cea mai mare parte din implementarea temei se afla in "client.c":
+In functia main am salvat in cate un array de dimensiune 1 valorile pentru
+cookie si token ce valideaza daca un client este audentificat sau nu, 
+respectiv daca are acces la biblioteca sau nu. Initial, cookie[0] si token[0]
+sunt intializate cu "empty_cookie" si "empty_token" pentru a putea verifica 
+daca un untilizator este logat sau daca are acces la biblioteca.
+Aici se citesc comenzi de la stdin pana cand se intalneste comanda "exit" 
+si se executa apeland functiile corespunzatoare.
+	1.register_command - se citesc valorile dorite pentru username si password 
+de la tastatura si se folosesc pentru a construi mesajul ce va fi trimis serverului
+ca obiect json. Daca exista un utilizator cu acelasi username, functia va intoarce
+un mesaj de eroare, altfel audentificarea a fost facuta cu succes.
+	2.login_command - utilizatorul nu se poate loga daca este deja altcineva logat.
+Este in principiu asemanatoare cu register_command. Daca credentialele nu se potrivesc
+se va intoarce un mesaj de eroare, altfel se cauta in raspuns valoarea pentru cookie
+si se retine.
+	3.enter_library - se poate realiza doar daca un client este logat (verificam
+acest lucru comparand cookie[0] cu "empty_cookie"),	altfel va intoarce un mesaj 
+de eroare. Functia creeaza un request de tip GET cu cookie-ul obtinut
+in urma apelarii funtiei login_command. Se primeste un raspuns de la server,
+iar daca acesta nu contine erori se preia token-ul si se retine.
+	4.get_books - functia primeste ca paramtetrii un cookie si un token. Daca
+acestea contin valori diferite de cele initiale ("empty_cookie" si "empty_token"),
+inseamna ca comenzile de login si enter_library au fost executate cu succes, altfel
+s-ar fi afisat mesaje corespunzatoare de eroare. Se construieste un mesaj folosind
+functia get cu cookie-ul si token-ul primiti, iar daca in raspunsul primit de la 
+server nu exista nicio eroare, se vor intoarce id-ul si titlul tuturor cartilor din
+biblioteca.
+	5.get_book - asemanatoare cu get_books. In plus, utilizatorul trebuie sa introduca
+si id-ul cartii dorite. Daca nu introduce un id valid, se va afisa un mesaj de eroare
+corespunzator. Pentru aceasta functie, pentru functia GET, am compus ruta de accces
+adaugand si id-ul cartii la finalul sirului "/api/v1/tema/library/books/".
+	6.add_book - se verifica daca utilizatorul este logat si daca are acces la
+biblioteca. In caz afirmativ, se introduc datele necesare ce se folosesc pentru a
+contrui un mesaj de tip json ce va fi trimis la server. Daca exista erori, se va afisa
+un mesaj corespunzator, altfel cartea va fi adaugata si se va afisa mesajul
+"Book was added successfully!".
+	7.delete_book -  se verifica daca utilizatorul este logat si daca are acces la
+biblioteca. In caz afirmativ, se incearca stergerea unei carti ce are ca id valoarea 
+primita de la stdin. Daca cartea cu id-ul respectiv nu exista, se va afisa un mesaj de
+eroare, altfel cartea va fi stearsa. Mesajul catre server este construit cu ajutorul
+functiei compute_delete_request.
+	8. logout - se poate executa doar daca urilizatorul este logat. Se copiaza in
+cookie[0] si token[0] valorile initiale "empty_cookie" si "empty_token". 
